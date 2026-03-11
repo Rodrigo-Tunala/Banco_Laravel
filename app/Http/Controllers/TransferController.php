@@ -1,0 +1,60 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Transfer;
+use App\Models\User;
+use Dflydev\DotAccessData\Data;
+use Illuminate\Container\Attributes\Database;
+use Illuminate\Http\Request;
+
+class TransferController extends Controller
+{
+    public function store(Request $request)
+    {
+        $validatedData = $request->validate([
+            'payer_id' => 'required|exists:users,id',
+            'payee_id' => 'required|exists:users,id|different:payer_id',
+            'value' => 'required|numeric|min:0.01',
+        ]);
+    
+
+        
+        $payer = User::find($validatedData['payer_id']);
+        $payee = User::find($validatedData['payee_id']);
+        
+        
+        if ($payer->type === 'merchant') {
+            return response()->json([
+                'message' => 'Merchants users are not allowed to send transfers'
+                ], 403);
+            }
+            
+        if ($payer->wallet->balance < $validatedData['value']) {
+            return response()->json([
+                'message' => 'Insufficient balance'], 422);
+            }
+        
+        $payer->wallet->balance -= $validatedData['value'];
+        $payee->wallet->balance += $validatedData['value'];
+        $payer->wallet->save();
+        $payee->wallet->save();
+        
+        
+        $transfer = Transfer::create([
+            'payer_id' => $validatedData['payer_id'],
+            'payee_id' => $validatedData['payee_id'],
+            'value' => $validatedData['value'],
+        ]);
+        
+        return response()->json([
+            'message' => 'Transfer created successfully',
+            'transfer' => $transfer
+            ], 201);
+                    
+                
+    }            
+                    
+
+     
+}
