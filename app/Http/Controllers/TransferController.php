@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\DB;
 use App\Models\Transfer;
 use App\Models\User;
-use Dflydev\DotAccessData\Data;
-use Illuminate\Container\Attributes\Database;
 use Illuminate\Http\Request;
 
 class TransferController extends Controller
@@ -35,23 +34,25 @@ class TransferController extends Controller
                 'message' => 'Insufficient balance'], 422);
             }
         
-        $payer->wallet->balance -= $validatedData['value'];
-        $payee->wallet->balance += $validatedData['value'];
-        $payer->wallet->save();
-        $payee->wallet->save();
-        
-        
-        $transfer = Transfer::create([
-            'payer_id' => $validatedData['payer_id'],
-            'payee_id' => $validatedData['payee_id'],
-            'value' => $validatedData['value'],
-        ]);
-        
-        return response()->json([
+        $transfer = DB::transaction(function () use ($payer, $payee, $validatedData) {
+            $payer->wallet->balance -= $validatedData['value'];
+            $payee->wallet->balance += $validatedData['value'];
+            $payer->wallet->save();
+            $payee->wallet->save();
+            
+            
+            return Transfer::create([
+                'payer_id' => $validatedData['payer_id'],
+                'payee_id' => $validatedData['payee_id'],
+                'value' => $validatedData['value'],
+                ]);
+                
+            });
+                
+            return response()->json([
             'message' => 'Transfer created successfully',
             'transfer' => $transfer
-            ], 201);
-                    
+                ], 201);
                 
     }            
                     
