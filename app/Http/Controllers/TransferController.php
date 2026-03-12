@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use App\Models\Transfer;
 use App\Models\User;
@@ -33,7 +34,16 @@ class TransferController extends Controller
             return response()->json([
                 'message' => 'Insufficient balance'], 422);
             }
-        
+            
+        $response = Http::get('https://util.devi.tools/api/v2/authorize');
+        if (!$response['data']['authorization']) {
+            return response()->json([
+                'message' => 'Transfer not authorized'
+            ], 403);
+        }
+
+
+
         $transfer = DB::transaction(function () use ($payer, $payee, $validatedData) {
             $payer->wallet->balance -= $validatedData['value'];
             $payee->wallet->balance += $validatedData['value'];
@@ -48,7 +58,8 @@ class TransferController extends Controller
                 ]);
                 
             });
-                
+
+
             return response()->json([
             'message' => 'Transfer created successfully',
             'transfer' => $transfer
