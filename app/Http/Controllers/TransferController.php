@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use App\Models\Transfer;
@@ -59,11 +60,20 @@ class TransferController extends Controller
                 
             });
 
+        
+        $response = Http::post('https://util.devi.tools/api/v1/notify');
 
-            return response()->json([
-            'message' => 'Transfer created successfully',
-            'transfer' => $transfer
-                ], 201);
+        if(!$response->successful()) {
+            // Log the failure but do not roll back the transaction
+            Log::error('Failed to send notification for transfer ID: ' . $transfer->id);
+
+        }
+        
+
+        return response()->json([
+        'message' => 'Transfer created successfully',
+        'transfer' => $transfer
+            ], 201);
                 
     }            
                     
