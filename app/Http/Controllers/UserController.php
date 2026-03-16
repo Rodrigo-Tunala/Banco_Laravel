@@ -6,6 +6,8 @@ use App\Models\User;
 use App\Models\Wallet;
 use Illuminate\Http\Request;
 
+use function Laravel\Prompts\select;
+
 class UserController extends Controller
 {
     public function store(Request $request)
@@ -31,6 +33,32 @@ class UserController extends Controller
             'message' => 'User created successfully',
              'user' => $user
              ], 201);
+
+        
     }
 
+    public function show($userId)
+    {
+        $user = User::with([
+        'wallet'=> function($query) {
+                $query->select('user_id','balance');
+        }])
+        ->select('id', 'name', 'email', 'cpf_cnpj', 'type')
+        ->find($userId);
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'User not found'
+            ], 404);
+        } else {
+            return response()->json([
+            'user' => $user
+            ], 200);
+        }
+
+        }
+
+
+
+        
 }

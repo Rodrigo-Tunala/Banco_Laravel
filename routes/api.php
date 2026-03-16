@@ -9,3 +9,5 @@ use Illuminate\Support\Facades\Route;
 Route::post('/users', [UserController::class, 'store']);
 
 Route::post('/transfers', [TransferController::class, 'store']);
+
+Route::get('/user/{id}', [UserController::class, 'show']);

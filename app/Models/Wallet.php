@@ -20,4 +20,8 @@ class Wallet extends Model
     protected $casts = [
          'balance' => 'decimal:2',
     ];
+
+    protected $hidden = [
+        'user_id',
+    ];
 }
